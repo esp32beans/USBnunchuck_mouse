@@ -19,9 +19,17 @@ Y_SPEED = 3.0   # Also known as sensitivity
 
 mouse = Mouse(usb_hid.devices)
 
-# For QT Py ESP32-S3 no PSRAM when using the STEMMA connector.
-# This should work for other boards with STEMMA connectors.
-nc = adafruit_nunchuk.Nunchuk(board.STEMMA_I2C())
+# This should work for all boards with STEMMA connectors.
+i2c = board.STEMMA_I2C()
+
+if board.board_id in ('adafruit_qt2040_trinkey', 'adafruit_qtpy_rp2040',
+        'adafruit_feather_rp2040'):
+    i2c.try_lock()
+    i2c.scan()
+    i2c.unlock()
+
+nc = adafruit_nunchuk.Nunchuk(i2c)
+
 
 # Experiment with mouse acceleration/sensitivity. For small deflections of the
 # joystick move the mouse slowly. For larger deflections, move the mouse
@@ -43,11 +51,12 @@ for x in range(128):
         Y_ACCEL.append(0)
     else:
         X_ACCEL.append(int((math.pow(x/127.0, X_SPEED) * 127) + 0.5))
-        if x > 0 and X_ACCEL[x] == 0:
-            X_ACCEL[x] = 1
         Y_ACCEL.append(int((math.pow(x/127.0, Y_SPEED) * 127) + 0.5))
-        if x > 0 and Y_ACCEL[x] == 0:
-            Y_ACCEL[x] = 1
+        if x > 0:
+            if X_ACCEL[x] == 0:
+                X_ACCEL[x] = 1
+            if Y_ACCEL[x] == 0:
+                Y_ACCEL[x] = 1
     if JS_DEBUG:
         print(x, X_ACCEL[x], Y_ACCEL[x])
 
